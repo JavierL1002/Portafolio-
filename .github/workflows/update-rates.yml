@@ -1,0 +1,39 @@
+name: Actualizar Tasas de Cambio
+
+on:
+  schedule:
+    # Ejecutar de lunes a viernes a las 6 PM (hora Venezuela UTC-4 = 22:00 UTC)
+    - cron: '0 22 * * 1-5'
+  workflow_dispatch: # Permitir ejecución manual
+
+jobs:
+  update-rates:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+      
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      
+      - name: Instalar pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      
+      - name: Instalar dependencias
+        run: pnpm install --frozen-lockfile
+      
+      - name: Ejecutar actualización de tasas
+        env:
+          DATABASE_URL: \${{ secrets.DATABASE_URL }}
+        run: node scripts/update-exchange-rates.mjs
+      
+      - name: Notificar resultado
+        if: failure()
+        run: |
+          echo "❌ Falló la actualización de tasas de cambio"
+          exit 1
